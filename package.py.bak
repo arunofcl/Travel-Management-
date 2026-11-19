@@ -1,0 +1,61 @@
+
+def add_package(cursor, conn):
+    name = input("Enter Package name: ")
+    des = input("Enter the description : ")
+    price = float(input("Enter Package price: "))
+    from_loc = input("Start Location : ") 
+    to_loc = input("Going Location : ")
+    q = "INSERT INTO packages (package_name,description, price,from_location,to_location) VALUES (%s,%s,%s,%s,%s)"
+    values = (name,des, price,from_loc,to_loc)
+    c =conn.cursor()
+    res = c.execute(q,values)
+    conn.commit()
+    if res != 0:
+        print("Package added successfully")
+    else:
+        print("Package added Failed")
+
+
+
+def delete_package(cursor, conn):
+    pack_id = input("Enter pack_id ID to remove: ")
+    q = "delete from packages where id = %s"
+    c = conn.cursor()
+    res = c.execute(q,(pack_id,))
+    conn.commit()
+    if res != 0:
+        print("Package removed successfully")
+    else:
+        print("Package removed Failed")
+  
+
+def update_package_price(cursor, conn):
+    pack_id = input("Enter Package ID : ")
+    price = input("Enter new Price: ")
+    q = "update packages set password = %s where id = %s"
+    c = conn.cursor()
+    values = (price,pack_id)
+    res = c.execute(q,values)
+    conn.commit()
+    if res != 0:
+        print("Package updated successfully")
+    else:
+        print("Package updated Failed")
+
+
+def view_packages(cursor):
+    q = "select * from packages"
+    cursor.execute(q)
+    m = cursor.fetchall()
+    print("\n--- Package List ---")
+    if m:
+        for i in m:
+            print("Package _ID : ", i[0],
+            "\nPackage_Name : ",i[1],
+            "\nDescription : ",i[2],            
+            "\nFrom_location : ",i[4],
+            "\nTo_Location : ",i[5],
+            "\nPrice : ",i[3])
+            print("------------------------------------------------")
+    else:
+        print("No Package found.")

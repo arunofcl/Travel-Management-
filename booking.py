@@ -1,0 +1,129 @@
+from datetime import date
+from payment import *
+
+def view_packages():
+    cursor.execute("SELECT id, package_name, price FROM packages")
+    packages = cursor.fetchall()
+    print("\n--- Available Packages ---")
+    for p in packages:
+        print(f"ID:{p[0]}, Name:{p[1]}, Price: ₹{p[2]}")
+
+def add_booking(cursor, conn, customer_id, customer_name):
+    cursor.execute("SELECT id, package_name, price FROM packages")
+    packages = cursor.fetchall()
+    print("\n--- Available Packages ---")
+    for p in packages:
+        print(f"ID:{p[0]}, Name:{p[1]}, Price: ₹{p[2]}")
+    package_id = int(input("Enter Package ID to book: "))
+    cursor.execute("SELECT package_name, price FROM packages WHERE id=%s", (package_id,))
+    package = cursor.fetchone()
+    if not package:
+        print("Package not found!")
+        return
+    package_name = package[0]
+    price = float(package[1])
+
+    adults = int(input("Number of Adults: "))
+    children = int(input("Number of Children: "))
+    total_price = adults*price + children*(price*0.5)
+
+
+    print("Payment Method: 1.UPI  2.Cash")
+    choice = int(input("Enter Choice: "))
+    if choice == 1:
+        upi_id = input("Enter your UPI ID: ")
+        transaction_id = generate_transaction_id()
+        payment_method = "UPI"
+        print(f"Payment of ₹{total_price} done via UPI ({upi_id}), Transaction ID: {transaction_id}")
+    elif choice == 2:
+        transaction_id = None
+        payment_method = "Cash"
+        print(f"Payment of ₹{total_price} will be done in Cash")
+    else:
+        print("Invalid choice. Booking cancelled.")
+        return
+
+    cursor.execute("""
+        INSERT INTO bookings (customer_id, package_id, booking_date, adult_count, child_count, total_price)
+        VALUES (%s,%s,%s,%s,%s,%s)
+    """, (customer_id, package_id, date.today(), adults, children, total_price))
+    conn.commit()
+    booking_id = cursor.lastrowid
+
+    cursor.execute("""
+        INSERT INTO payments (booking_id, payment_date, payment_amount, payment_method, transaction_id)
+        VALUES (%s,%s,%s,%s,%s)
+    """, (booking_id, date.today(), total_price, payment_method, transaction_id))
+    conn.commit()
+
+    save_payment_receipt(customer_name, booking_id, package_name, total_price, payment_method, transaction_id)
+
+
+def view_bookings(cursor):
+    cursor.execute("""
+        SELECT b.id, c.username, p.package_name,
+               b.adult_count, b.child_count,
+               b.total_price, b.booking_date
+        FROM bookings b
+        JOIN customer c ON b.customer_id = c.id
+        JOIN packages p ON b.package_id = p.id
+    """)
+    bookings = cursor.fetchall()
+
+    print("\n--- All Bookings ---")
+    if bookings:
+        for b in bookings:
+            print(
+                f"BookingID:{b[0]}, Customer:{b[1]}, Package:{b[2]}, "
+                f"Adults:{b[3]}, Children:{b[4]}, Total:₹{b[5]}, Date:{b[6]}"
+            )
+    else:
+        print("No bookings found.")
+
+
+def view_my_bookings(cursor, customer_id):
+    cursor.execute("""
+        SELECT b.id, p.package_name,
+               b.adult_count, b.child_count,
+               b.total_price, b.booking_date
+        FROM bookings b
+        JOIN packages p ON b.package_id = p.id
+        WHERE b.customer_id=%s
+    """, (customer_id,))
+    bookings = cursor.fetchall()
+
+    print("\n--- My Bookings ---")
+    if bookings:
+        for b in bookings:
+            print(
+                f"BookingID:{b[0]}, Package:{b[1]}, "
+                f"Adults:{b[2]}, Children:{b[3]}, "
+                f"Total:₹{b[4]}, Date:{b[5]}"
+            )
+    else:
+        print("No bookings found.")
+
+
+def update_customer_phone(cursor, conn):
+    booking_id = int(input("Enter Booking ID to update customer phone: "))
+    cursor.execute("SELECT customer_id FROM bookings WHERE id=%s", (booking_id,))
+    result = cursor.fetchone()
+
+    if not result:
+        print("Booking not found!")
+        return
+
+    new_phone = input("Enter new phone number: ")
+    cursor.execute(
+        "UPDATE customer SET phone=%s WHERE id=%s",
+        (new_phone, result[0])
+    )
+    conn.commit()
+    print("Phone number updated successfully.")
+
+
+def delete_booking_by_customer(cursor, conn):
+    customer_id = int(input("Enter Customer ID to delete bookings: "))
+    cursor.execute("DELETE FROM bookings WHERE customer_id=%s", (customer_id,))
+    conn.commit()
+    print("Booking(s) deleted successfully.")

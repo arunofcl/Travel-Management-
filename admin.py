@@ -1,0 +1,52 @@
+
+def add_admin(cursor, conn):
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+    q = "insert into admin ( username, password) VALUES (%s, %s)" 
+    values = (username, password)
+    c = conn.cursor()
+    res=c.execute(q,values)
+    conn.commit()
+    if res != 0:
+        print("Admin added successfully")
+    else:
+        print("Admin added Failed")
+
+
+def remove_admin(cursor, conn):
+    admin_id = input("Enter Admin ID to remove: ")
+    q = "delete from admin where id = %s"
+    c = conn.cursor()
+    res = c.execute(q,(admin_id,))
+    conn.commit()
+    if res != 0:
+        print("Admin removed successfully")
+    else:
+        print("Admin removed Failed")
+
+
+
+def update_admin(cursor, conn):
+    admin_id = input("Enter Admin ID : ")
+    new_password = input("Enter new password: ")
+    q = "update admin set password = %s where id = %s"
+    c = conn.cursor()
+    values = (new_password,admin_id)
+    res = c.execute(q,values)
+    conn.commit()
+    if res != 0:
+        print("Admin updated successfully")
+    else:
+        print("Admin updated Failed")
+
+
+
+def view_admins(cursor):
+    q = "select * from admin"
+    cursor.execute(q)
+    m = cursor.fetchall()
+    print("\n--- Admin List ---")
+    for i in m:
+        print("ID : ", i[0] ,"| Username : ",i[1] ,"| Password : ",i[2])
+    else:
+        print("No admins found.")

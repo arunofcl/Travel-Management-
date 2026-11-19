@@ -1,0 +1,93 @@
+import os
+import csv
+import time
+import random
+from datetime import date
+
+def generate_transaction_id():
+    ts = int(time.time())            
+    rand = random.randint(1000, 9999) 
+    return f"TXN{ts}{rand}"
+
+
+def save_payment_receipt(customer_name, booking_id, package_name, total_price, payment_method, transaction_id):
+    csv_file = f"payment_receipts_{date.today()}.csv"
+    file_exists = os.path.exists(csv_file)
+    with open(csv_file, 'a', newline='', encoding='utf-8') as f:  # UTF-8 encoding
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(["BookingID","Customer","Package","Amount","Payment Method","Transaction ID","Date"])
+        writer.writerow([booking_id, customer_name, package_name, total_price, payment_method, transaction_id, date.today()])
+
+    txt_file = f"receipt_{booking_id}.txt"
+    with open(txt_file, "w", encoding="utf-8") as f:  
+        f.write("------- Payment Receipt -------\n")
+        f.write(f"Booking ID: {booking_id}\n")
+        f.write(f"Customer: {customer_name}\n")
+        f.write(f"Package: {package_name}\n")
+        f.write(f"Amount Paid: ₹{total_price}\n")
+        f.write(f"Payment Method: {payment_method}\n")
+        f.write(f"Transaction ID: {transaction_id}\n")
+        f.write(f"Date: {date.today()}\n")
+        f.write("-------------------------------\n")
+
+    print(f"Payment recorded. CSV: {csv_file}, TXT: {txt_file}")
+
+def view_payment(cursor):
+    while True:
+        print("\n--- Payment Panel (Admin) ---")
+        print("1. View All Payments")
+        print("2. View Payments by Customer")
+        print("3. Back")
+
+        choice = int(input("Enter Choice: "))
+
+        if choice == 1:
+            cursor.execute("""
+                SELECT p.id, b.id, c.username,
+                       p.payment_amount, p.payment_method,
+                       p.transaction_id, p.payment_date
+                FROM payments p
+                JOIN bookings b ON p.booking_id = b.id
+                JOIN customer c ON b.customer_id = c.id
+            """)
+            payments = cursor.fetchall()
+
+            print("\n--- All Payments ---")
+            if payments:
+                for p in payments:
+                    print(
+                        f"PaymentID:{p[0]} | BookingID:{p[1]} | "
+                        f"Customer:{p[2]} | Amount:Rs.{p[3]} | "
+                        f"Method:{p[4]} | TXN:{p[5]} | Date:{p[6]}"
+                    )
+            else:
+                print("No payments found.")
+
+        elif choice == 2:
+            cid = int(input("Enter Customer ID: "))
+            cursor.execute("""
+                SELECT p.id, b.id,
+                       p.payment_amount, p.payment_method,
+                       p.transaction_id, p.payment_date
+                FROM payments p
+                JOIN bookings b ON p.booking_id = b.id
+                WHERE b.customer_id = %s
+            """, (cid,))
+            payments = cursor.fetchall()
+
+            print("\n--- Customer Payments ---")
+            if payments:
+                for p in payments:
+                    print(
+                        f"PaymentID:{p[0]} | BookingID:{p[1]} | "
+                        f"Amount:Rs.{p[2]} | Method:{p[3]} | "
+                        f"TXN:{p[4]} | Date:{p[5]}"
+                    )
+            else:
+                print("No payments for this customer.")
+
+        elif choice == 3:
+            break
+        else:
+            print("❌ Invalid choice")

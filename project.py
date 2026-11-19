@@ -1,0 +1,41 @@
+
+import mysql.connector
+from package import *
+from booking import *
+from main import *
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="san2410",
+    database="dummy"
+)
+cursor = conn.cursor()
+
+while True:
+    print("\n=== Login ===")
+    print("1. Admin\n2. Staff\n3. Customer\n4. Exit")
+    choice=input("Choice: ")
+
+    if choice=='1':
+        username=input("Username: ")
+        password=input("Password: ")
+        cursor.execute("SELECT id FROM admin WHERE username=%s AND password=%s",(username,password))
+        if cursor.fetchone(): admin_panal()
+        else: print("Invalid Admin credentials!")
+    elif choice=='2':
+        username=input("Username: ")
+        password=input("Password: ")
+        cursor.execute("SELECT id FROM staff WHERE username=%s AND password=%s",(username,password))
+        if cursor.fetchone(): staff_panel()
+        else: print("Invalid Staff credentials!")
+    elif choice=='3':
+        customer_id=input("Customer ID: ")
+        password=input("Password: ")
+        cursor.execute("SELECT id FROM customer WHERE id=%s AND password=%s",(customer_id,password))
+        user = cursor.fetchone()
+        if user: customer_panel(user[0])
+        else: print("Invalid Customer credentials!")
+    elif choice=='4':
+        print("Thank you! Exiting program...")
+        break
+    else: print("Invalid choice!")

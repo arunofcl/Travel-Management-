@@ -1,0 +1,51 @@
+def add_staff(cursor, conn):
+    username = input("Enter username: ")
+    password = input("Enter password: ")
+    q = "insert into staff ( username, password) VALUES (%s, %s)" 
+    values = (username, password)
+    c = conn.cursor()
+    res=c.execute(q,values)
+    conn.commit()
+    if res != 0:
+        print("staff added successfully")
+    else:
+        print("staff added Failed")
+
+
+
+def remove_staff(cursor, conn):
+    staff_id = input("Enter Staff ID to remove: ")
+    q = "delete from staff where id = %s"
+    c = conn.cursor()
+    res = c.execute(q,(staff_id,))
+    conn.commit()
+    if res != 0:
+        print("Staff removed successfully")
+    else:
+        print("Staff removed Failed")
+
+
+def update_staff(cursor, conn):
+    staff_id = input("Enter Staff ID : ")
+    new_password = input("Enter new password: ")
+    q = "update staff set password = %s where id = %s"
+    c = conn.cursor()
+    values = (new_password,staff_id)
+    res = c.execute(q,values)
+    conn.commit()
+    if res != 0:
+        print("Staff updated successfully")
+    else:
+        print("Staff updated Failed")
+
+def view_staff(cursor):
+    q = "select * from staff"
+    cursor.execute(q)
+    m = cursor.fetchall()
+    print("\n--- Staff List ---")
+    if m:
+        for i in m:
+            print("ID : ", i[0] ,"| Username : ",i[1] ,"| Password : ",i[2])
+    else:
+        print("No Staff found.")
+
